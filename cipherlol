@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cipher PANEL</title>
+
+<style>
+body{
+    margin:0;
+    font-family:Arial;
+    background: radial-gradient(circle at top,#2a004d,#000);
+    color:white;
+    overflow:hidden;
+}
+
+/* LOGIN */
+#loginScreen{
+    height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+}
+
+.card{
+    width:360px;
+    padding:30px;
+    border-radius:16px;
+    background:rgba(255,255,255,0.05);
+    backdrop-filter:blur(20px);
+    box-shadow:0 0 40px rgba(160,0,255,0.3);
+    animation:fade 0.5s ease;
+}
+
+input{
+    width:100%;
+    padding:12px;
+    margin:8px 0;
+    border:none;
+    border-radius:8px;
+    background:#111;
+    color:white;
+}
+
+button{
+    width:100%;
+    padding:12px;
+    margin-top:8px;
+    border:none;
+    border-radius:8px;
+    background:#7c3cff;
+    color:white;
+    cursor:pointer;
+}
+button:hover{background:#5d1fff;}
+
+/* APP */
+#app{
+    display:none;
+    height:100vh;
+}
+
+/* SIDEBAR */
+.sidebar{
+    position:fixed;
+    left:0;
+    top:0;
+    width:240px;
+    height:100%;
+    background:rgba(255,255,255,0.04);
+    backdrop-filter:blur(20px);
+    padding:20px;
+}
+
+.brand{
+    font-size:18px;
+    font-weight:bold;
+    margin-bottom:10px;
+}
+
+.user{
+    font-size:12px;
+    color:#aaa;
+    margin-bottom:20px;
+}
+
+.nav button{
+    margin:5px 0;
+}
+
+/* MAIN */
+.main{
+    margin-left:260px;
+    padding:20px;
+}
+
+.panel{
+    display:none;
+    animation:fade 0.3s ease;
+}
+
+.active{
+    display:block;
+}
+
+.box{
+    background:rgba(255,255,255,0.05);
+    padding:15px;
+    border-radius:12px;
+    margin-bottom:12px;
+}
+
+/* FOOTER */
+.footer{
+    position:fixed;
+    bottom:10px;
+    right:15px;
+    font-size:11px;
+    color:#666;
+}
+
+@keyframes fade{
+    from{opacity:0;transform:translateY(10px);}
+    to{opacity:1;transform:translateY(0);}
+}
+</style>
+</head>
+
+<body>
+
+<!-- LOGIN -->
+<div id="loginScreen">
+    <div class="card">
+        <h2>Cipher LOGIN</h2>
+        <input id="user" placeholder="Username">
+        <input id="pass" type="password" placeholder="Password">
+        <button onclick="login()">Login</button>
+    </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+        <div class="brand">Cipher PANEL</div>
+        <div class="user" id="displayUser"></div>
+
+        <div class="nav">
+            <button onclick="show('dash')">Dashboard</button>
+            <button onclick="show('cloud')">Cloud</button>
+            <button onclick="show('shop')">Products</button>
+        </div>
+
+        <button onclick="logout()">Logout</button>
+    </div>
+
+    <!-- MAIN -->
+    <div class="main">
+
+        <!-- DASH -->
+        <div id="dash" class="panel active">
+
+            <div class="box">
+                <h3>License</h3>
+                <input id="licenseInput" placeholder="Enter license">
+                <button onclick="checkLicense()">Verify</button>
+                <p id="status"></p>
+            </div>
+
+            <div class="box">
+                <h3>Key</h3>
+                <p id="key">******</p>
+                <button onclick="toggleKey()">Show Key</button>
+            </div>
+
+        </div>
+
+        <!-- CLOUD -->
+        <div id="cloud" class="panel">
+            <div class="box">
+                <h3>Cloud Notes</h3>
+                <textarea id="notes" style="width:100%;height:200px;background:#111;color:white;border:none;"></textarea>
+            </div>
+        </div>
+
+        <!-- PRODUCTS -->
+        <div id="shop" class="panel">
+
+            <div class="box">
+                Product A
+                <button onclick="download()">Download</button>
+            </div>
+
+            <div class="box">
+                Product B
+                <button onclick="download()">Download</button>
+            </div>
+
+        </div>
+
+    </div>
+</div>
+
+<div class="footer">Cipher SYSTEM • Local Storage Build</div>
+
+<script>
+let currentUser = "";
+
+/* DB */
+function db(){return JSON.parse(localStorage.getItem("users")||"{}");}
+function save(d){localStorage.setItem("users",JSON.stringify(d));}
+
+/* LOGIN */
+function login(){
+    let u=user.value,p=pass.value;
+    let d=db();
+
+    if(!d[u]||d[u].pass!==p){
+        alert("Invalid login");
+        return;
+    }
+
+    currentUser=u;
+    localStorage.setItem("logged",u);
+
+    start();
+}
+
+function start(){
+    loginScreen.style.display="none";
+    app.style.display="block";
+    displayUser.innerText=currentUser;
+
+    notes.value=localStorage.getItem("n_"+currentUser)||"";
+}
+
+/* AUTO LOGIN */
+if(localStorage.getItem("logged")){
+    currentUser=localStorage.getItem("logged");
+    start();
+}
+
+/* NAV */
+function show(id){
+    document.querySelectorAll(".panel").forEach(p=>p.classList.remove("active"));
+    document.getElementById(id).classList.add("active");
+}
+
+/* DEVICE */
+function dev(){
+    return btoa(navigator.userAgent+screen.width+screen.height);
+}
+
+/* LICENSE */
+function checkLicense(){
+    let d=db();
+    let u=d[currentUser];
+    if(!u)return;
+
+    let input=licenseInput.value;
+
+    if(input!==u.license){
+        status.innerText="Invalid License";
+        return;
+    }
+
+    if(!u.device){
+        u.device=dev();
+        u.whitelisted=true;
+    }
+
+    if(u.device!==dev()){
+        status.innerText="Device blocked";
+        return;
+    }
+
+    u.whitelisted=true;
+    save(d);
+
+    status.innerText="Access Granted";
+}
+
+/* KEY */
+function toggleKey(){
+    let u=db()[currentUser];
+    if(!u?.whitelisted)return alert("No access");
+    key.innerText=u.license||"NO KEY";
+}
+
+/* DOWNLOAD */
+function download(){
+    let u=db()[currentUser];
+    if(!u?.whitelisted)return alert("Not allowed");
+
+    let a=document.createElement("a");
+    a.href=URL.createObjectURL(new Blob(["File: "+currentUser]));
+    a.download="file.txt";
+    a.click();
+}
+
+/* NOTES */
+notes.oninput=()=>{
+    localStorage.setItem("n_"+currentUser,notes.value);
+}
+
+/* LOGOUT */
+function logout(){
+    localStorage.removeItem("logged");
+    location.reload();
+}
+</script>
+
+</body>
+</html>
